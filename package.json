@@ -1,0 +1,20 @@
+{
+  "name": "steam",
+  "version": "1.0.0",
+  "description": "",
+  "homepage": "https://github.com/Lotite/steamkeys#readme",
+  "bugs": {
+    "url": "https://github.com/Lotite/steamkeys/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Lotite/steamkeys.git"
+  },
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "test": "python -m src.tests.scraping_eneba"
+  }
+}
