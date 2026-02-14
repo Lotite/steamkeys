@@ -1,0 +1,14 @@
+name: uc
+channels:
+  - conda-forge
+dependencies:
+  - python=3.10
+  - pip
+  - pip:
+      - selenium==4.10.0
+      - undetected-chromedriver
+      - webdriver-manager
+      - requests
+      - fake-useragent
+      - beautifulsoup4
+      - lxml

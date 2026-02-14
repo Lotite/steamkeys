@@ -1,4 +1,5 @@
-from selenium.webdriver.chrome.webdriver import WebDriver as Chrome 
+import undetected_chromedriver as uc
+from selenium.webdriver.chrome.webdriver import WebDriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -65,18 +66,54 @@ class spider:
     def __init__(self, orq:I_CONF):
         self.__orq = orq
 
+
     def __create_nav(self):
-        options = Options()
-        options.add_argument("--headless=new")
+        options = uc.ChromeOptions()
+
+        # Tamaño de ventana realista
+        # options.add_argument("--headless=new")
         options.add_argument("--window-size=1920,1080")
+
+        # Evitar aceleración por GPU
         options.add_argument("--disable-gpu")
+
+        # Requerido en contenedores / Linux
         options.add_argument("--no-sandbox")
         options.add_argument("--disable-dev-shm-usage")
-        options.add_argument("user-agent=Mozilla/5.0 ...")
-        return Chrome(options=options)
+
+        # User-Agent realista
+        options.add_argument(
+            "user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/121.0.0.0 Safari/537.36"
+        )
 
 
-    def __extractor(self, driver:Chrome):
+        # Desactivar extensiones
+        options.add_argument("--disable-extensions")
+
+        # Desactivar notificaciones
+        options.add_argument("--disable-notifications")
+
+        # Desactivar infobars
+        options.add_argument("--disable-infobars")
+
+        # Idioma realista
+        options.add_argument("--lang=es-ES")
+
+        # Cargar imágenes
+        options.add_argument("--blink-settings=imagesEnabled=true")
+
+        # Simular hardware realista
+        options.add_argument("--disable-features=IsolateOrigins,site-per-process")
+
+        # Crear navegador undetected
+        driver = uc.Chrome(options=options)
+
+        return driver
+
+
+    def __extractor(self, driver:WebDriver):
         dtos = []
         while True:
             try:
@@ -165,12 +202,12 @@ class spider:
         driver.get(url)
         self.__scroll_to_bottom(driver)
     
-    def __next_page(self,driver:Chrome):
-        time.sleep(0.5)
+    def __next_page(self,driver:WebDriver):
+        time.sleep(0.3)
         try:
             button = self.__get_element(driver,self.__orq.next_page_selector,max_time=10)
             button.click()
-            time.sleep(0.5)
+            time.sleep(0.3)
             self.__scroll_to_bottom(driver)
             return True
         except:
@@ -182,8 +219,8 @@ class spider:
         driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
         
     
-    def __get_elements(self, driver: Chrome, css_selector: str):
-        wait = WebDriverWait(driver, 5)
+    def __get_elements(self, driver: WebDriver, css_selector: str):
+        wait = WebDriverWait(driver, 3)
         try:
             wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, css_selector)))
             return driver.find_elements(By.CSS_SELECTOR, css_selector)
@@ -192,7 +229,7 @@ class spider:
 
 
     
-    def __get_element(self,driver:Chrome|WebElement,css_selector:str,max_time=5):
+    def __get_element(self,driver:WebDriver|WebElement,css_selector:str,max_time=5):
         wait = WebDriverWait(driver, max_time)
         try:
             wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, css_selector)))

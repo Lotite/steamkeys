@@ -32,3 +32,38 @@ class ENEBA_CONF(I_CONF):
     
     def create_dto(self)->GAME_DTO:
         return GAME_DTO()
+    
+    
+    
+    
+class G2A_CONF(I_CONF):
+    
+    def buid_url(self, query):
+        return "https://www.g2a.com/es/category/gaming-c1?f%5Bplatform%5D%5B0%5D=1&query=" + self.base_query_builder(query);
+
+    @property
+    def source_web(self) -> str:
+        return "G2A"
+
+
+    @property
+    def card_container_selector(self)->str:
+        return "ul.iIAArv > li";
+
+    
+    @property
+    def next_page_selector(self)->str:
+        return "nav > a";
+
+
+    
+    @property
+    def propietes_selector(self) -> dict[str, str]:
+        return {
+            "name" : "a > h3",
+            "price":"div.font-bold.text-foreground.text-price-2xl",
+            "source_url" : "a"
+        }
+
+    def create_dto(self)->GAME_DTO:
+        return GAME_DTO()
