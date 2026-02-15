@@ -6,10 +6,16 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.remote.webelement import WebElement
 import time
-
-
+from src.utils.loger import Logger
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.action_chains import ActionChains
 from abc import ABC, abstractmethod 
 import re
+
+
+
 ### Orquestrador del scraping
 class I_CONF(ABC):    
     
@@ -46,8 +52,8 @@ class I_CONF(ABC):
         ...
     
     
-    def base_query_builder(self,query:str):
-        query = re.sub(r"(?<=\S)\s+(?=\S)", "%20", query)  
+    def base_query_builder(self,query:str,space="%20"):
+        query = re.sub(r"(?<=\S)\s+(?=\S)", space, query)  
         query = re.sub(r"\s+", "", query)
         return query;
 
@@ -63,51 +69,35 @@ class I_CONF(ABC):
 
 
 class spider:
-    def __init__(self, orq:I_CONF):
+    def __init__(self, orq:I_CONF,hidden:bool=True):
         self.__orq = orq
+        self.__hidden = hidden
 
 
     def __create_nav(self):
         options = uc.ChromeOptions()
 
-        # Tamaño de ventana realista
-        # options.add_argument("--headless=new")
+        if self.__hidden :
+            options.add_argument("--headless=new")
         options.add_argument("--window-size=1920,1080")
 
-        # Evitar aceleración por GPU
         options.add_argument("--disable-gpu")
 
-        # Requerido en contenedores / Linux
         options.add_argument("--no-sandbox")
         options.add_argument("--disable-dev-shm-usage")
 
-        # User-Agent realista
         options.add_argument(
             "user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
             "AppleWebKit/537.36 (KHTML, like Gecko) "
             "Chrome/121.0.0.0 Safari/537.36"
         )
 
-
-        # Desactivar extensiones
         options.add_argument("--disable-extensions")
-
-        # Desactivar notificaciones
         options.add_argument("--disable-notifications")
-
-        # Desactivar infobars
         options.add_argument("--disable-infobars")
-
-        # Idioma realista
         options.add_argument("--lang=es-ES")
-
-        # Cargar imágenes
         options.add_argument("--blink-settings=imagesEnabled=true")
-
-        # Simular hardware realista
         options.add_argument("--disable-features=IsolateOrigins,site-per-process")
-
-        # Crear navegador undetected
         driver = uc.Chrome(options=options)
 
         return driver
@@ -124,6 +114,7 @@ class spider:
                 if not self.__next_page(driver):
                     break
             except EmptyResult as e:
+                self.__log.add(f"Scraping cordado : {e}")
                 print(f"Scraping cordado: {e}")
                 break
             
@@ -134,7 +125,9 @@ class spider:
         
         for property , selector in self.__orq.propietes_selector.items():
             game_info[property] = self.__extract_transform(card,selector)
-        return self.__orq.make_dto(game_info)
+        dto = self.__orq.make_dto(game_info)
+        self.__log.add(f"Se extrajo este juego : {dto.__dict__}")
+        return dto;
     
     
     
@@ -152,7 +145,6 @@ class spider:
 
         raw = element.text.strip()
 
-        # Función auxiliar para limpiar y convertir a número
         def clean_and_convert_to_number(text):
             cleaned_text = text
             currency_symbols = ["€", "$", "£", "¥", "₹", "₽", "₩", "₺", "%", "-"]
@@ -205,14 +197,48 @@ class spider:
     def __next_page(self,driver:WebDriver):
         time.sleep(0.3)
         try:
-            button = self.__get_element(driver,self.__orq.next_page_selector,max_time=10)
-            button.click()
+            self.__click(driver,self.__orq.next_page_selector)
             time.sleep(0.3)
             self.__scroll_to_bottom(driver)
+            self.__log.add(f"Se pudo hacer click a boton next page:{driver.current_url}")
             return True
-        except:
+        except Exception as e:
+            self.__log.add(f"No se encontro el boton next page o no es clickeable: {e}")
             return False
+    
+
+
+    def __click(self, driver: WebDriver, selector: str, max_time=10):
+        button = self.__get_element(driver, selector, max_time=max_time)
+
+        WebDriverWait(driver, max_time).until(
+            EC.visibility_of(button)
+        )
+
+        driver.execute_script(
+            "arguments[0].scrollIntoView({block: 'center', inline: 'center'});",
+            button
+        )
+
+        WebDriverWait(driver, max_time).until(
+            EC.element_to_be_clickable((By.CSS_SELECTOR, selector))
+        )
+
+        try:
+            button.click()
+            return
+        except:
+            pass
+
+        try:
+            ActionChains(driver).move_to_element(button).click().perform()
+            return
+        except:
+            pass
+
+        driver.execute_script("arguments[0].click();", button)
         
+    
         
     def __scroll_to_bottom(self, driver):
         time.sleep(0.5)
@@ -224,7 +250,8 @@ class spider:
         try:
             wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, css_selector)))
             return driver.find_elements(By.CSS_SELECTOR, css_selector)
-        except:
+        except Exception as e:
+            self.__log.add(f"No se encontro nungun elemento con el selector {css_selector}: {e}")
             return []
 
 
@@ -234,14 +261,24 @@ class spider:
         try:
             wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, css_selector)))
             return driver.find_element(By.CSS_SELECTOR,css_selector)
-        except:
+        except Exception as e:
+            self.__log.add(f"No se encontro nungun elemento con el selector {css_selector}: {e}")
             return None
 
     def scraping_game(self, query: str):
-        with self.__create_nav() as driver:
-            url = self.__orq.buid_url(query)
-            self.__go_to(driver,url)
-            return self.__extractor(driver)
+        with self.__create_nav() as driver , Logger() as log:
+            self.__log = log;
+            log.add(f"Iniciando test configuracion:{self.__orq.__class__}")
+            try:
+                url = self.__orq.buid_url(query)
+                self.__go_to(driver,url)
+                return self.__extractor(driver)
+            except Exception as e:
+                log.add(f"El proceso se interumpio:{e}")
+                return None
+            finally:
+                log.add(f"Se finalizo el scraping")
+                
             
             
             
