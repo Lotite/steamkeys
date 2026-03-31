@@ -31,10 +31,7 @@ class ENEBA_CONF(I_CONF):
         }
     
     def create_dto(self)->GAME_DTO:
-        return GAME_DTO()
-    
-    
-    
+        return GAME_DTO()   
     
 class G2A_CONF(I_CONF):
     
@@ -67,11 +64,6 @@ class G2A_CONF(I_CONF):
 
     def create_dto(self)->GAME_DTO:
         return GAME_DTO()
-    
-    
-    
-    
-    
     
 class ALLKEYSHOP_CONF(I_CONF):
     

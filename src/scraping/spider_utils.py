@@ -184,9 +184,6 @@ class spider:
             return number_value
 
         return raw
-
-
-        
     
     
     
