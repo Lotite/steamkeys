@@ -98,7 +98,7 @@ class spider:
         options.add_argument("--lang=es-ES")
         options.add_argument("--blink-settings=imagesEnabled=true")
         options.add_argument("--disable-features=IsolateOrigins,site-per-process")
-        driver = uc.Chrome(options=options)
+        driver = uc.Chrome(options=options, version_main=146)
 
         return driver
 

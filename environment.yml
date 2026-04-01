@@ -1,9 +1,16 @@
-name: uc
+name: steamkeys_env
 channels:
   - conda-forge
+  - defaults
 dependencies:
   - python=3.10
   - pip
+  - pandas
+  - matplotlib
+  - seaborn
+  - pyspark
+  - pymongo
+  - kafka-python
   - pip:
       - selenium==4.10.0
       - undetected-chromedriver
