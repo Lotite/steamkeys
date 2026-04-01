@@ -69,10 +69,10 @@ class I_CONF(ABC):
 
 
 class spider:
-    def __init__(self, orq:I_CONF,hidden:bool=True):
+    def __init__(self, orq:I_CONF,hidden:bool=True,log=True):
         self.__orq = orq
         self.__hidden = hidden
-
+        self.__create_log=log;
 
     def __create_nav(self):
         options = uc.ChromeOptions()
@@ -263,7 +263,7 @@ class spider:
             return None
 
     def scraping_game(self, query: str):
-        with self.__create_nav() as driver , Logger() as log:
+        with self.__create_nav() as driver , Logger(off= not self.__create_log) as log:
             self.__log = log;
             log.add(f"Iniciando test configuracion:{self.__orq.__class__}")
             try:

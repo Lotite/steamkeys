@@ -1,11 +1,21 @@
 from datetime import date , datetime
 
 class GAME_DTO:
-    price:int
+    steam_id: int
     name:str
+    
     source_url:str
     source_web:str
+    
+    web_price:int
+    steam_price:int
     register_time:date
+    region:str
+    
+    genres: list
+    reviews_score: float
+    release_date: str
+    
     
     
     def __init__(self):
