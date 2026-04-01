@@ -1,7 +1,0 @@
-logs/*
-*/__pycache__/
-*.pyc
-*.pyo
-*$py.class
-
-!logs/.gitkeep
