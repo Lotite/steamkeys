@@ -12,6 +12,8 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.action_chains import ActionChains
 from abc import ABC, abstractmethod 
+from src.utils.kafka import *
+from json import dumps
 import re
 
 
@@ -61,6 +63,7 @@ class I_CONF(ABC):
     
     def make_dto(self,propertys:dict[str,str|float|int]):
         dto = self.create_dto()
+        dto.state = 0;
         dto.source_web = self.source_web
         for key , value in propertys.items():
             setattr(dto, key, value)
@@ -73,6 +76,7 @@ class spider:
         self.__orq = orq
         self.__hidden = hidden
         self.__create_log=log;
+        self.__kafka_producer = create_producer()
 
     def __create_nav(self):
         options = uc.ChromeOptions()
@@ -103,6 +107,9 @@ class spider:
         return driver
 
 
+    def SendDTO(self,dto:object):
+        sendMessage(self.__kafka_producer,"steamkey",dto.source_web,dumps(dto.to_dict()))
+
     def __extractor(self, driver:WebDriver):
         dtos = []
         while True:
@@ -114,8 +121,8 @@ class spider:
                 if not self.__next_page(driver):
                     break
             except EmptyResult as e:
-                self.__log.add(f"Scraping cordado : {e}")
-                print(f"Scraping cordado: {e}")
+                self.__log.add(f"Scraping cortado : {e}")
+                print(f"Scraping cortado: {e}")
                 break
             
         return dtos
@@ -127,6 +134,7 @@ class spider:
             game_info[property] = self.__extract_transform(card,selector)
         dto = self.__orq.make_dto(game_info)
         self.__log.add(f"Se extrajo este juego : {dto.__dict__}")
+        self.SendDTO(dto=dto)
         return dto;
     
     
@@ -194,8 +202,12 @@ class spider:
     def __next_page(self,driver:WebDriver):
         time.sleep(0.3)
         try:
+            button = self.__get_element(driver, self.__orq.next_page_selector)
             self.__click(driver,self.__orq.next_page_selector)
-            time.sleep(0.3)
+            if button:
+                WebDriverWait(driver, 5).until(EC.staleness_of(button))
+            
+            time.sleep(0.5)
             self.__scroll_to_bottom(driver)
             self.__log.add(f"Se pudo hacer click a boton next page:{driver.current_url}")
             return True

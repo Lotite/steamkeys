@@ -2,7 +2,7 @@ from src.scraping.spider_utils import I_CONF
 from src.Models.dtos import GAME_DTO
 
 
-#TODO: Añadir la extracion de la region en ENEBA G2A y ALLKEYSHOP, probar DRIFFLE
+
 
 class ENEBA_CONF(I_CONF):
     

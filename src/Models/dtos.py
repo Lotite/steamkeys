@@ -1,6 +1,7 @@
 from datetime import date , datetime
 
 class GAME_DTO:
+    _id:int
     steam_id: int
     name:str
     
@@ -16,6 +17,7 @@ class GAME_DTO:
     reviews_score: float
     release_date: str
     
+    state:int
     
     
     def __init__(self):
