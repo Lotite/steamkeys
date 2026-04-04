@@ -24,6 +24,7 @@ class Logger:
         self.__file.close()
 
     def add(self, text: str):
+        print(text)
         if self.__off:
             return
         time = f"({self.__get_time()}) "
