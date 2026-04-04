@@ -12,6 +12,7 @@ dependencies:
   - pymongo
   - kafka-python
   - pip:
+      - confluent-kafka
       - selenium==4.10.0
       - undetected-chromedriver
       - webdriver-manager
