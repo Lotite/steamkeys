@@ -22,7 +22,7 @@ RAWG_KEY = "ce849f6ddcf94229a5a7669f0b229eba"
 
 
 def GetGameList(size:int=40) -> Series:
-    page = random.randint(1,250)
+    page = random.randint(1,10000/size)
     url = f"https://api.rawg.io/api/games?key={RAWG_KEY}&stores=1&page_size={size}&page={page}"
     resul = requests.get(url, timeout=10).json()
     steam_games = DataFrame(resul["results"])["slug"]
@@ -33,10 +33,22 @@ def base_query_builder(query:str,space="%20"):
     query = re.sub(r"\s+", "", query)
     return query;
 
-def GetSteamId(name_game:str)->int:
-    url = f"https://store.steampowered.com/api/storesearch/?term={base_query_builder(name_game)}&l=spanish&cc=ES"
+def GetGameName(scrapin_name:str):
+    url = f"https://store.steampowered.com/api/storesearch/?term={scrapin_name}&l=english&cc=US"
     try:
         resul = requests.get(url, timeout=10).json()
+        return resul["items"][0]["name"]
+    except:
+        return scrapin_name
+
+
+
+def GetSteamId(scrapin_name:str)->int:
+    game_name = GetGameName(scrapin_name)
+    url = f"https://store.steampowered.com/api/storesearch/?term={base_query_builder(game_name)}&l=spanish&cc=ES"
+    try:
+        resul = requests.get(url, timeout=10).json()
+        
         return resul["items"][0]["id"]
     except Exception:
         return None
@@ -87,6 +99,7 @@ def GetSteamInfoByName(name_game:str,producer:Producer|None=None):
         return {}
     steam_info = GetSteamInfoById(steam_id)
     if steam_info and producer is not None:
+        print(steam_info["name"])
         sendMessage(producer, "SteamGames", steam_info["source_web"], dumps(steam_info))
     return steam_info
 

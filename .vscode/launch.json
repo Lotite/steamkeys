@@ -1,5 +1,18 @@
 {
+    "version": "0.2.0",
     "configurations": [
+        {
+            "name": "Python: SteamKeys (Current File)",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "python": "/home/user/miniconda3/envs/steamkeys_env/bin/python",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}"
+            }
+        },
         {
             "name": "Python: Scraping Test",
             "type": "debugpy",

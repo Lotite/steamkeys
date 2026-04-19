@@ -1,4 +1,3 @@
-import undetected_chromedriver as uc
 from selenium.webdriver.chrome.webdriver import WebDriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -7,8 +6,7 @@ from selenium.webdriver.remote.webelement import WebElement
 from urllib3.exceptions import ProtocolError
 from http.client import RemoteDisconnected
 import time
-import tempfile
-import shutil
+from src.utils.driver import create_driver, destroy_driver
 from src.utils.loger import Logger
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -19,7 +17,7 @@ from src.utils.kafka import *
 from json import dumps
 import re
 from concurrent.futures import ProcessPoolExecutor, as_completed
-from src.steam.steamRequest import scraping_steam_game
+
 
 
 ### Orquestrador del scraping
@@ -76,7 +74,7 @@ class I_CONF(ABC):
 
 
 class spider:
-    __SCRAPING_TIMEOUT_SECONDS = 60
+    __SCRAPING_TIMEOUT_SECONDS = 120
 
     def __init__(self, orq:I_CONF,hidden:bool=True,log=True):
         self.__orq = orq
@@ -85,65 +83,14 @@ class spider:
         self.__kafka_producer = create_producer()
         self.__started_at = 0.0
 
-    def __create_nav(self):
-        options = uc.ChromeOptions()
-        profile_dir = tempfile.mkdtemp(prefix="steamkeys-chrome-")
-
-        if self.__hidden :
-            options.add_argument("--headless=new")
-        options.add_argument("--window-size=1920,1080")
-
-        options.add_argument("--disable-gpu")
-
-        options.add_argument("--no-sandbox")
-        options.add_argument("--disable-dev-shm-usage")
-
-        options.add_argument(
-            "user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-            "AppleWebKit/537.36 (KHTML, like Gecko) "
-            "Chrome/121.0.0.0 Safari/537.36"
-        )
-
-        options.add_argument("--disable-extensions")
-        options.add_argument("--disable-notifications")
-        options.add_argument("--disable-infobars")
-        options.add_argument("--lang=es-ES")
-        options.add_argument("--blink-settings=imagesEnabled=true")
-        options.add_argument("--disable-features=IsolateOrigins,site-per-process")
-        options.add_argument("--disable-background-networking")
-        options.add_argument("--disable-sync")
-        options.add_argument(f"--user-data-dir={profile_dir}")
-        options.add_argument("--remote-debugging-port=0")
-        driver = uc.Chrome(options=options, version_main=146)
-        setattr(driver, "_steamkeys_profile_dir", profile_dir)
-        driver.set_page_load_timeout(45)
-
-        return driver
-
-    def __close_nav(self, driver: WebDriver | None):
-        if driver is None:
-            return
-
-        try:
-            driver.quit()
-        except Exception:
-            pass
-
-        try:
-            driver.service.stop()
-        except Exception:
-            pass
-
-        profile_dir = getattr(driver, "_steamkeys_profile_dir", None)
-        if profile_dir:
-            shutil.rmtree(profile_dir, ignore_errors=True)
-
     def __comprobar_tiempo(self):
         if time.monotonic() - self.__started_at >= self.__SCRAPING_TIMEOUT_SECONDS:
             raise Exception(f"Tiempo finalizado : {self.__SCRAPING_TIMEOUT_SECONDS} segundos")
 
 
-    def SendDTO(self,dto:object):
+    def SendDTO(self,dto:object)->bool:
+        if not isinstance(dto.steam_price, float):
+            raise Exception("El precio no es un float: " + dto["steam_price"])
         sendMessage(self.__kafka_producer,"SteamKeys",dto.source_web,dumps(dto.to_dict()))
 
     def __extractor(self, driver:WebDriver):
@@ -167,14 +114,16 @@ class spider:
     def __extract_game_info(self, card: WebElement):
         game_info = {}
         
-        for property , selector in self.__orq.propietes_selector.items():
-            game_info[property] = self.__extract_transform(card,selector)
-        dto = self.__orq.make_dto(game_info)
-        self.__log.add(f"Se extrajo este juego : {dto.__dict__}")
-        self.SendDTO(dto=dto)
-        return dto;
-    
-    
+        try:
+            for property , selector in self.__orq.propietes_selector.items():
+                game_info[property] = self.__extract_transform(card,selector)
+            dto = self.__orq.make_dto(game_info)
+            self.__log.add(f"Se extrajo este juego : {dto.__dict__}")
+            self.SendDTO(dto=dto)
+            return dto;
+        except Exception as e:
+            self.__log.add(f"No se pudo extraer un juego : {e}")
+            return {}
     
 
     def __extract_transform(self, card: WebElement, selector: str):
@@ -192,7 +141,7 @@ class spider:
 
         def clean_and_convert_to_number(text):
             cleaned_text = text
-            currency_symbols = ["€", "$", "£", "¥", "₹", "₽", "₩", "₺", "%", "-"]
+            currency_symbols = ["€", "$", "£", "¥", "₹", "₽", "₩", "₺", "%", "-","EUR"]
             for symbol in currency_symbols:
                 cleaned_text = cleaned_text.replace(symbol, "")
             cleaned_text = cleaned_text.strip()
@@ -335,8 +284,9 @@ class spider:
 
                 for attempt in range(1, max_attempts + 1):
                     driver = None
+                    profile_dir = None
                     try:
-                        driver = self.__create_nav()
+                        driver, profile_dir = create_driver(headless=self.__hidden)
                         self.__go_to(driver, url)
                         return self.__extractor(driver)
                     except Exception as e:
@@ -355,7 +305,7 @@ class spider:
                         log.add(f"El proceso se interumpio:{e}")
                         return None
                     finally:
-                        self.__close_nav(driver)
+                        destroy_driver(driver, profile_dir)
 
                 log.add("Se agotaron los reintentos de inicio")
                 return None
@@ -365,7 +315,7 @@ class spider:
 
 
 def scraping_game_store(steam_game:str,store_conf:I_CONF):
-    spi = spider(store_conf,hidden=False)
+    spi = spider(store_conf)
     return spi.scraping_game(steam_game)
 
 
@@ -375,6 +325,7 @@ def _run_scraping_source(source:str, steam_game:str):
         DRIFFLE_CONF,
         ENEBA_CONF,
         G2A_CONF,
+        GAMIVO_CONF,
     )
 
     stores = {
@@ -382,6 +333,7 @@ def _run_scraping_source(source:str, steam_game:str):
         "G2A": G2A_CONF,
         "DRIFFLE": DRIFFLE_CONF,
         "ALLKEYSHOP": ALLKEYSHOP_CONF,
+        "GAMIVO": GAMIVO_CONF,
     }
 
     try:
@@ -393,10 +345,11 @@ def _run_scraping_source(source:str, steam_game:str):
         return source, None
 
 def scrapin_game_stores(steam_game: str):
-    sources = ["ENEBA", "G2A", "DRIFFLE", "ALLKEYSHOP"]
+    sources = ["ENEBA", "DRIFFLE", "ALLKEYSHOP"]
     results = {}
 
     with ProcessPoolExecutor(max_workers=2) as executor:
+
         futures = [
             executor.submit(_run_scraping_source, source, steam_game)
             for source in sources
