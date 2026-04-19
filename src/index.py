@@ -1,3 +1,6 @@
+import sys
+sys.path.append("/home/ubuntu/steamkeys/src")
+
 from src.steam.steam_spider import SteamSpider
 
 
