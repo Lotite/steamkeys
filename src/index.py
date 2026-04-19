@@ -1,9 +1,6 @@
-import sys
-sys.path.append("/home/ubuntu/steamkeys/src")
-
-from src.steam.steam_spider import SteamSpider
+from steam.steam_spider import SteamSpider
 
 
 limit = 1000
-spider = SteamSpider(oculto=False)
+spider = SteamSpider()
 spider.scrape_topsellers(limite=limit)
