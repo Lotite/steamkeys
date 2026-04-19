@@ -76,11 +76,6 @@ class SteamSpider:
 
 
 if __name__ == "__main__":
-    import sys
     limit = 1000
-    if len(sys.argv) > 1:
-        limit = int(sys.argv[1])
-    
-   
     spider = SteamSpider(oculto=False)
     spider.scrape_topsellers(limite=limit)
