@@ -23,7 +23,9 @@ class SteamSpider:
             driver.get(self.url_steam)
             time.sleep(3) 
             while contador_total < limite:
-                # driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+                # Scroll un pixel para que actualice la lista
+                driver.execute_script("window.scrollBy(0, 1);")
+
                 time.sleep(2)
 
                 filas = driver.find_elements(By.CSS_SELECTOR, "a.search_result_row")
