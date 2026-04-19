@@ -1,10 +1,10 @@
 import time
 import json
 from selenium.webdriver.common.by import By
-from src.utils.kafka import create_producer, sendMessage
-from src.scraping.spider_utils import scrapin_game_stores
-from src.steam.steamRequest import GetSteamInfoById
-from src.utils.driver import create_driver, destroy_driver
+from utils.kafka import create_producer, sendMessage
+from scraping.spider_utils import scrapin_game_stores
+from steam.steamRequest import GetSteamInfoById
+from utils.driver import create_driver, destroy_driver
 
 class SteamSpider:
     def __init__(self, oculto=True):
@@ -14,6 +14,7 @@ class SteamSpider:
         self.url_steam = "https://store.steampowered.com/search/?filter=topsellers&ndl=1&hidef2p=1"
 
     def scrape_topsellers(self, limite=100):
+        print("Iniciando escraping")
         driver, dir_perfil = create_driver(headless=self.oculto)
         lote_actual = []
         contador_total = 0

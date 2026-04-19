@@ -1,8 +1,8 @@
-from src.scraping.spider_utils import *
-from src.scraping.scraper_config import ENEBA_CONF , G2A_CONF , ALLKEYSHOP_CONF , DRIFFLE_CONF , GAMESEAL_CONF , GAMIVO_CONF
-from src.Models.dtos import GAME_DTO
+from scraping.spider_utils import *
+from scraping.scraper_config import ENEBA_CONF , G2A_CONF , ALLKEYSHOP_CONF , DRIFFLE_CONF , GAMESEAL_CONF , GAMIVO_CONF
+from Models.dtos import GAME_DTO
 
-from src.steam.steamRequest import *
+from steam.steamRequest import *
 
 
 # # spi = spider(ALLKEYSHOP_CONF())

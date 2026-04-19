@@ -13,8 +13,8 @@ import requests
 from confluent_kafka import Producer
 from pandas import DataFrame, Series
 
-from src.Models.dtos import GAME_DTO
-from src.utils.kafka import create_producer, sendMessage
+from Models.dtos import GAME_DTO
+from utils.kafka import create_producer, sendMessage
 
 RAWG_KEY = "ce849f6ddcf94229a5a7669f0b229eba"
 

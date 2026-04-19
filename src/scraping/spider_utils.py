@@ -6,14 +6,14 @@ from selenium.webdriver.remote.webelement import WebElement
 from urllib3.exceptions import ProtocolError
 from http.client import RemoteDisconnected
 import time
-from src.utils.driver import create_driver, destroy_driver
-from src.utils.loger import Logger
+from utils.driver import create_driver, destroy_driver
+from utils.loger import Logger
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.action_chains import ActionChains
 from abc import ABC, abstractmethod 
-from src.utils.kafka import *
+from utils.kafka import *
 from json import dumps
 import re
 from concurrent.futures import ProcessPoolExecutor, as_completed
@@ -320,7 +320,7 @@ def scraping_game_store(steam_game:str,store_conf:I_CONF):
 
 
 def _run_scraping_source(source:str, steam_game:str):
-    from src.scraping.scraper_config import (
+    from scraping.scraper_config import (
         ALLKEYSHOP_CONF,
         DRIFFLE_CONF,
         ENEBA_CONF,

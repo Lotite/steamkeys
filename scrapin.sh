@@ -1,0 +1,1 @@
+~/miniconda3/envs/steamkeys_env/bin/python src/index.py

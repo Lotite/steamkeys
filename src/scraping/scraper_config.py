@@ -1,7 +1,7 @@
 import requests
 from bs4 import BeautifulSoup
-from src.scraping.spider_utils import I_CONF
-from src.Models.dtos import GAME_DTO
+from scraping.spider_utils import I_CONF
+from Models.dtos import GAME_DTO
 
 
 
